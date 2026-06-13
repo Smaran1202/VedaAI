@@ -1,4 +1,4 @@
-import { OutputSkeleton } from "@/components/output-skeleton";
+import { OutputSkeleton } from "@/components/assignments/output-skeleton";
 
 export default function AssignmentOutputLoading() {
   return <OutputSkeleton />;

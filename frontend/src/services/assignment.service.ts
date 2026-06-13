@@ -1,5 +1,5 @@
 import { api } from "@/services/api";
-import type { Assignment } from "@/types";
+import type { Assignment, GeneratedQuestion } from "@/types";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -23,9 +23,11 @@ export interface AssignmentListParams {
 }
 
 export interface CreateAssignmentPayload {
+  school: string;
   title: string;
   subject: string;
   className?: string;
+  chapter: string;
   dueDate: string;
   timeAllowed: string;
   questionTypes: Array<{
@@ -35,7 +37,7 @@ export interface CreateAssignmentPayload {
   }>;
   totalQuestions: number;
   totalMarks: number;
-  difficulty: string;
+  difficulty: "easy" | "medium" | "hard";
   instructions: string;
   fileUrl?: string;
   sourceFile?: File;
@@ -77,6 +79,77 @@ export async function regenerateAssignment(id: string) {
   return response.data.data;
 }
 
+export type QuestionPayload = {
+  sectionId?: string;
+  type: string;
+  question: string;
+  difficulty: "easy" | "medium" | "hard";
+  marks: number;
+  options?: string[];
+  answer: string;
+};
+
+export type ImproveAction =
+  | "make-easier"
+  | "make-harder"
+  | "improve-wording"
+  | "add-hots"
+  | "add-numerical";
+
+export async function updateQuestion(
+  assignmentId: string,
+  questionId: string,
+  payload: Partial<QuestionPayload>
+) {
+  const response = await api.patch<ApiResponse<Assignment>>(
+    `/api/assignments/${assignmentId}/questions/${questionId}`,
+    payload
+  );
+  return normalizeAssignment(response.data.data);
+}
+
+export async function deleteQuestion(assignmentId: string, questionId: string) {
+  const response = await api.delete<ApiResponse<Assignment>>(
+    `/api/assignments/${assignmentId}/questions/${questionId}`
+  );
+  return normalizeAssignment(response.data.data);
+}
+
+export async function addQuestion(assignmentId: string, payload: QuestionPayload) {
+  const response = await api.post<ApiResponse<Assignment>>(
+    `/api/assignments/${assignmentId}/questions`,
+    payload
+  );
+  return normalizeAssignment(response.data.data);
+}
+
+export async function regenerateQuestion(assignmentId: string, questionId: string) {
+  const response = await api.post<ApiResponse<Assignment>>(
+    `/api/assignments/${assignmentId}/questions/${questionId}/regenerate`
+  );
+  return normalizeAssignment(response.data.data);
+}
+
+export async function improveQuestion(
+  assignmentId: string,
+  questionId: string,
+  action: ImproveAction
+) {
+  const response = await api.post<ApiResponse<Assignment>>(
+    `/api/assignments/${assignmentId}/questions/${questionId}/improve`,
+    { action }
+  );
+  return normalizeAssignment(response.data.data);
+}
+
+export async function restoreVersion(assignmentId: string, versionIndex: number) {
+  const response = await api.post<ApiResponse<Assignment>>(
+    `/api/assignments/${assignmentId}/versions/restore`,
+    { versionIndex }
+  );
+  return normalizeAssignment(response.data.data);
+}
+
 export async function downloadAssignmentPdf(id: string) {
   const response = await api.get<Blob>(`/api/assignments/${id}/pdf`, {
     responseType: "blob"
@@ -110,8 +183,10 @@ function toFormData(payload: CreateAssignmentPayload) {
   const formData = new FormData();
 
   formData.append("title", payload.title);
+  formData.append("school", payload.school);
   formData.append("subject", payload.subject);
   formData.append("className", payload.className ?? "");
+  formData.append("chapter", payload.chapter);
   formData.append("dueDate", payload.dueDate);
   formData.append("timeAllowed", payload.timeAllowed);
   formData.append("questionTypes", JSON.stringify(payload.questionTypes));

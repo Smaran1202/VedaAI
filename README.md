@@ -1,55 +1,47 @@
-# VedaAI AI Assessment Creator
+# VedaAI - AI Assessment Platform
 
-VedaAI is a full-stack AI assessment creator for teachers. It lets a teacher create an assignment, upload reference material, define question type distribution, generate a structured question paper with Gemini, track generation progress in real time, and export the finished paper as a formatted PDF.
+VedaAI is an AI-powered assessment and teaching assistant for teachers. It provides a teacher assessment workspace for creating assignments, generating structured question papers from prompts or uploaded material, tracking generation status in real time, and exporting polished exam papers as PDFs.
 
-## Architecture Flow
+The current product scope focuses on assignment creation and AI question paper generation. The codebase is organized as a SaaS foundation for future Auth, RAG, Student Portal, AI Grading, and Analytics phases.
 
-1. Teacher creates an assignment in the Next.js dashboard.
-2. Frontend submits assignment details to the Express API.
-3. Backend validates input with Zod and stores it in MongoDB. If MongoDB is unavailable locally, the app uses an in-memory fallback repository so development is not blocked.
-4. Assignment generation is queued with BullMQ and Redis.
-5. If a file is uploaded, the backend extracts PDF text or image OCR text, cleans it, trims oversized content, and stores it with the assignment.
-6. Worker processes the job, calls Gemini, validates and de-duplicates the generated paper, stores the result, and emits Socket.IO events.
-7. When uploaded content exists, Gemini is instructed to generate questions only from the extracted material. Without an upload, it uses the subject/class prompt.
-8. Frontend listens for queued, processing, completed, and failed events and updates the UI without refresh.
-9. Frontend uses WebSocket updates with polling fallback for queued jobs.
-10. Teacher downloads the completed exam paper through the Puppeteer PDF export route.
+## Features
+
+- Teacher assignment dashboard with search, status filters, view, regenerate, PDF export, and delete actions.
+- Assignment creation form with PDF, TXT, JPG, JPEG, and PNG upload support.
+- Question type distribution with counts, marks, and validation.
+- AI question generation with sectioned output, difficulty labels, marks, MCQ options, and answer keys.
+- Structured parsing and normalization so raw LLM responses are never rendered directly.
+- MongoDB persistence for assignments and generated papers.
+- Redis and BullMQ queue support for background generation jobs.
+- Socket.IO status updates with frontend polling fallback for queued jobs.
+- Puppeteer PDF export with exam-paper formatting.
+- Development fallback storage when MongoDB is unavailable locally.
+
+## Architecture
+
+```text
+Teacher UI
+  -> Next.js frontend
+  -> Express API
+  -> Zod validation
+  -> MongoDB assignment record
+  -> BullMQ job in Redis
+  -> Worker generates paper with Gemini
+  -> MongoDB generated paper update
+  -> Socket.IO event and polling fallback
+  -> Structured exam paper UI and PDF export
+```
+
+When Redis is not configured, the backend can run generation inline for local development. When MongoDB is unavailable in development, the backend uses in-memory fallback storage so frontend workflows remain testable.
 
 ## Tech Stack
 
 - Frontend: Next.js App Router, TypeScript, Tailwind CSS, Zustand, React Hook Form, Zod, Socket.IO client, Axios, Lucide React
-- Backend: Node.js, Express, TypeScript, MongoDB, Mongoose, Zod, Multer, Morgan, CORS, dotenv
-- AI and jobs: Gemini API, Redis, BullMQ, Socket.IO
-- Material processing: PDF text extraction and image OCR
+- Backend: Node.js, Express, TypeScript, MongoDB, Mongoose, Multer, Zod, Socket.IO
+- Jobs and cache: Redis, BullMQ
+- AI: Gemini API with structured prompt and parsing pipeline
+- Document processing: PDF text extraction, TXT ingestion, image OCR
 - Export: Puppeteer PDF generation
-
-## Environment Variables
-
-Create these files from the examples:
-
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env.local
-```
-
-Backend variables:
-
-```env
-PORT=5000
-MONGODB_URI=
-CLIENT_URL=http://localhost:3000
-BACKEND_URL=http://localhost:5000
-REDIS_URL=
-GEMINI_API_KEY=
-```
-
-Frontend variables:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
-```
-
-Never commit real `.env` or `.env.local` files.
 
 ## Local Setup
 
@@ -59,19 +51,36 @@ Install dependencies from the repository root:
 npm install
 ```
 
-Run the backend API:
+Create environment files:
 
 ```bash
-npm run dev --workspace backend
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 ```
 
-Run the BullMQ worker in a second terminal:
+## Environment Variables
 
-```bash
-npm run worker --workspace backend
+Backend:
+
+```env
+PORT=5000
+CLIENT_URL=http://localhost:3000
+MONGODB_URI=
+MONGODB_DNS_SERVERS=8.8.8.8,1.1.1.1
+REDIS_URL=
+GEMINI_API_KEY=
 ```
 
-Run the frontend in a third terminal:
+Frontend:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+```
+
+Never commit real `.env` or `.env.local` files.
+
+## Running Frontend
 
 ```bash
 npm run dev --workspace frontend
@@ -83,18 +92,82 @@ Open:
 http://localhost:3000/assignments
 ```
 
-## Build Commands
+## Running Backend
 
 ```bash
-npm run build --workspace backend
-npm run build --workspace frontend
+npm run dev --workspace backend
 ```
 
-Or build both workspaces:
+Health check:
+
+```text
+http://localhost:5000/health
+```
+
+## Running Worker
+
+```bash
+npm run worker --workspace backend
+```
+
+The worker processes BullMQ jobs from Redis. If Redis is not configured, local generation falls back to the API process.
+
+## Build And Quality Checks
+
+```bash
+npm run build --workspace frontend
+npm run build --workspace backend
+npm run typecheck --workspace backend
+```
+
+Root commands:
+
+```bash
+npm run build
+npm run typecheck
+```
+
+## Deployment Guide
+
+Recommended deployment:
+
+- Frontend: Vercel
+- Backend API: Render, Railway, or another Node service
+- Worker: Railway background service, Render worker, or another long-running Node process
+- MongoDB: MongoDB Atlas
+- Redis: Upstash or managed Redis provider
+
+Backend API build command:
+
+```bash
+npm install && npm run build --workspace backend
+```
+
+Backend API start command:
+
+```bash
+npm run start --workspace backend
+```
+
+Worker build command:
+
+```bash
+npm install && npm run build --workspace backend
+```
+
+Worker start command:
+
+```bash
+npm run worker:start --workspace backend
+```
+
+Frontend build command from the `frontend` root:
 
 ```bash
 npm run build
 ```
+
+Set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SOCKET_URL` to the deployed backend URL. Set backend `CLIENT_URL` to the deployed frontend URL.
 
 ## API Overview
 
@@ -106,51 +179,22 @@ npm run build
 - `POST /api/assignments/:id/regenerate`
 - `GET /api/assignments/:id/pdf`
 
-## AI Generation Quality
+## Current Limitations
 
-The generation pipeline is class-aware and subject-aware. Gemini is prompted to create unique, grade-appropriate questions, subject-relevant numerical problems, topic-specific diagram prompts, mixed difficulty, and matching answer keys. The backend also normalizes generated output and removes duplicate question text before saving or exporting.
+- Authentication and role-based access are not implemented yet.
+- Generated papers are scoped to assignment records, not teacher accounts.
+- RAG retrieval is not implemented; uploaded material is extracted and placed into the generation prompt.
+- Worker Socket.IO events do not cross process boundaries directly, so the frontend uses polling fallback for queued jobs.
+- Automated tests are not included yet.
+- Production observability, audit logs, and billing are not implemented.
 
-When a PDF or image is uploaded, VedaAI extracts readable content first and prompts Gemini to generate questions only from that uploaded material. If extraction fails, the API returns `Could not read uploaded content` instead of silently generating unrelated questions.
+## Roadmap
 
-If Gemini is unavailable, the fallback generator still produces realistic class-level content instead of placeholder questions. MongoDB downtime also does not block local development because assignment APIs and generation continue with in-memory fallback storage.
-
-## Security and Reliability
-
-- Zod validates and trims assignment input before persistence.
-- Uploads are limited to 10MB and restricted to JPEG, PNG, and PDF files.
-- API routes use a shared rate limiter.
-- CORS is restricted through `CLIENT_URL`.
-- Secrets are read from environment variables only and ignored by Git.
-
-## Verified Interactions
-
-- Sidebar logo and assignment links navigate to implemented routes.
-- Unimplemented sidebar and mobile nav items are disabled and labelled as coming soon.
-- Assignment create buttons open `/assignments/create`.
-- Dashboard search filters assignments through the API.
-- Dashboard filter menu filters assignments by generation status.
-- Assignment cards and View Assignment actions open the assignment output page.
-- Delete Assignment asks for confirmation and removes the card after the API succeeds.
-- File upload supports browse and drag/drop for supported files.
-- Date picker opens from both input and calendar icon.
-- Question type dropdown, add/remove row, and stepper controls update totals.
-- Previous returns to the assignment dashboard and Next submits validated form data.
-- Output page regenerate queues generation again.
-- Output page PDF button downloads the generated paper.
-- Mobile header, hamburger menu, floating create button, bottom nav, mobile back buttons, card menus, date picker, generate, regenerate, and PDF actions are wired.
-
-## Deployment Notes
-
-1. Deploy the backend to a Node-capable service with persistent environment variables.
-2. Provide production values for `MONGODB_URI`, `REDIS_URL`, `GEMINI_API_KEY`, `CLIENT_URL`, and `BACKEND_URL`.
-3. Run the API process with `npm run start --workspace backend` after building.
-4. Run the worker as a separate process with `npm run worker --workspace backend` or an equivalent production process manager command.
-5. Deploy the frontend to Vercel or another Next.js host.
-6. Set `NEXT_PUBLIC_API_URL` to the deployed backend URL.
-7. Ensure the deployment environment supports Puppeteer or provides a compatible Chromium runtime for PDF export.
-
-## Known Limitations
-
-- MongoDB local connection may require proper Atlas IP/DNS configuration.
-- WebSocket updates have polling fallback for queued jobs.
-- Tests are not included due to assignment timebox.
+- Phase 1: Auth + Roles
+- Phase 2: Document Upload Pipeline
+- Phase 3: RAG Question Generation
+- Phase 4: Assessment Intelligence
+- Phase 5: Student Attempt Flow
+- Phase 6: AI Grading
+- Phase 7: Analytics
+- Phase 8: Production Hardening

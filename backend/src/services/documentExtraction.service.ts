@@ -1,13 +1,12 @@
 import { readFile } from "fs/promises";
 import { PDFParse } from "pdf-parse";
+import mammoth from "mammoth";
 import { recognize } from "tesseract.js";
 import { ApiError } from "../utils/apiError";
 
 const MAX_CONTENT_LENGTH = 14000;
 
 export async function extractUploadedContent(file: Express.Multer.File) {
-  console.log("file uploaded");
-
   try {
     const rawText = await extractText(file);
     const cleaned = cleanExtractedText(rawText);
@@ -17,8 +16,6 @@ export async function extractUploadedContent(file: Express.Multer.File) {
     }
 
     const content = summarizeIfTooLarge(cleaned);
-    console.log("text extracted");
-    console.log(`extracted length: ${content.length}`);
     return content;
   } catch {
     throw new ApiError(422, "Could not read uploaded content");
@@ -39,6 +36,11 @@ async function extractText(file: Express.Multer.File) {
     } finally {
       await parser.destroy();
     }
+  }
+
+  if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    const result = await mammoth.extractRawText({ buffer: file.buffer });
+    return result.value;
   }
 
   if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {

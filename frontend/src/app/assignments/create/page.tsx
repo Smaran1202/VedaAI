@@ -1,4 +1,5 @@
-import { CreateAssignmentForm } from "@/components/create-assignment-form";
+import { CreateAssignmentForm } from "@/components/forms/create-assignment-form";
+import { TeacherOnly } from "@/components/auth/teacher-only";
 
 export default function CreateAssignmentPage() {
   return (
@@ -7,7 +8,9 @@ export default function CreateAssignmentPage() {
         <h1 className="text-2xl font-black tracking-tight md:text-[26px]">Create Assignment</h1>
         <p className="mt-1 text-sm text-neutral-500">Set up a new assignment for your students.</p>
       </div>
-      <CreateAssignmentForm />
+      <TeacherOnly>
+        <CreateAssignmentForm />
+      </TeacherOnly>
     </section>
   );
 }

@@ -10,11 +10,24 @@ const questionTypeSchema = new Schema(
   { _id: false }
 );
 
+const paperVersionSchema = new Schema(
+  {
+    timestamp: { type: Date, required: true, default: Date.now },
+    action: { type: String, required: true, trim: true },
+    questionId: { type: String, trim: true, default: "" },
+    generatedPaper: { type: Schema.Types.Mixed, required: true }
+  },
+  { _id: false }
+);
+
 export const assignmentSchema = new Schema(
   {
+    school: { type: String, trim: true, default: "Your School" },
     title: { type: String, required: true, trim: true, index: true },
+    ownerId: { type: String, required: false, trim: true, index: true },
     subject: { type: String, required: true, trim: true, index: true },
-    className: { type: String, trim: true, default: "5th" },
+    className: { type: String, trim: true, default: "" },
+    chapter: { type: String, trim: true, default: "" },
     dueDate: { type: Date, required: true },
     timeAllowed: { type: String, trim: true, default: "45 minutes" },
     questionTypes: { type: [questionTypeSchema], required: true, default: [] },
@@ -30,7 +43,8 @@ export const assignmentSchema = new Schema(
       default: ASSIGNMENT_STATUS.QUEUED,
       index: true
     },
-    generatedPaper: { type: Schema.Types.Mixed, default: null }
+    generatedPaper: { type: Schema.Types.Mixed, default: null },
+    versions: { type: [paperVersionSchema], default: [] }
   },
   { timestamps: true }
 );

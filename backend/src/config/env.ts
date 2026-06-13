@@ -33,5 +33,6 @@ export const env = {
   clientUrl: optional("CLIENT_URL") ?? "http://localhost:3000",
   backendUrl: optional("BACKEND_URL"),
   redisUrl: optional("REDIS_URL"),
-  geminiApiKey: optional("GEMINI_API_KEY")
+  geminiApiKey: optional("GEMINI_API_KEY"),
+  clerkSecretKey: optional("CLERK_SECRET_KEY")
 } as const;

@@ -35,11 +35,14 @@ const defaultQuestionTypes = (): QuestionType[] => [
 
 export const useAssignmentFormStore = create<AssignmentFormStore>((set, get) => ({
   values: {
+    school: "",
     title: "",
     subject: "",
-    classSection: "5th",
+    classSection: "",
+    chapter: "",
     dueDate: "",
     timeAllowed: "3 hours",
+    difficulty: "medium",
     sourceFile: undefined,
     questionTypes: defaultQuestionTypes(),
     instructions: ""

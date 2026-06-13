@@ -8,7 +8,7 @@ import {
 } from "../queue/generation.types";
 import {
   completeAssignmentGeneration,
-  getAssignmentById,
+  getGenerationAssignmentById,
   markAssignmentFailed,
   markAssignmentProcessing
 } from "../services/assignment.service";
@@ -41,7 +41,14 @@ export async function startGenerationWorker() {
 
       await wait(1500);
 
-      const assignment = await getAssignmentById(assignmentId);
+      const assignment = await getGenerationAssignmentById(assignmentId);
+      console.info("[assignment:worker:generate]", {
+        assignmentId,
+        subject: assignment.subject,
+        chapter: assignment.chapter,
+        className: assignment.className,
+        instructions: assignment.instructions
+      });
       const generatedPaper = await generateQuestionPaper(assignment);
       await completeAssignmentGeneration(assignmentId, generatedPaper);
 

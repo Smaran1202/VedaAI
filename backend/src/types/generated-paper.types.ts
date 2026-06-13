@@ -1,11 +1,17 @@
 export interface GeneratedPaperQuestion {
+  id?: string;
+  sectionId?: string;
   question: string;
+  type?: string;
   difficulty: string;
   marks: number;
   options?: string[];
+  answer?: string;
+  sourceChunkId?: string;
 }
 
 export interface GeneratedPaperSection {
+  id?: string;
   title: string;
   instruction: string;
   questionType: string;

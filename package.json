@@ -1,5 +1,5 @@
 {
-  "name": "vedaai-assessment-creator",
+  "name": "vedaai",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -12,6 +12,6 @@
     "dev:backend": "npm run dev --workspace backend",
     "build": "npm run build --workspace frontend && npm run build --workspace backend",
     "lint": "npm run lint --workspace frontend",
-    "typecheck": "npm run typecheck --workspace backend"
+    "typecheck": "npm run typecheck --workspace frontend && npm run typecheck --workspace backend"
   }
 }

@@ -1,10 +1,10 @@
-import { UtilityPage } from "@/components/utility-page";
+import { UtilityPage } from "@/components/layout/utility-page";
 
 export default function GroupsPage() {
   return (
     <UtilityPage
       title="My Groups"
-      description="Class groups are visible here in the full product. For this assessment demo, assignment creation and paper generation are available from the Assignments workspace."
+      description="Class groups will organize teachers, sections, and shared assessment workflows. The active teacher assessment workspace is available from Assignments."
     />
   );
 }

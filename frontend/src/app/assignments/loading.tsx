@@ -1,4 +1,4 @@
-import { AssignmentListSkeleton } from "@/components/assignment-list-skeleton";
+import { AssignmentListSkeleton } from "@/components/assignments/assignment-list-skeleton";
 
 export default function AssignmentsLoading() {
   return <AssignmentListSkeleton />;

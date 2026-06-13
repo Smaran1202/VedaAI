@@ -1,10 +1,3 @@
-export const SCHOOL_PROFILE = {
-  name: "Delhi Public School",
-  location: "Bokaro Steel City",
-  userName: "John Doe",
-  userRole: "Science Faculty"
-} as const;
-
 export const ASSIGNMENT_EMPTY_COPY = {
   title: "No assignments yet",
   description:

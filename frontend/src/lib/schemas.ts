@@ -8,15 +8,18 @@ export const questionTypeSchema = z.object({
 });
 
 export const assignmentFormSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
+  school: z.string().min(2, "School is required"),
   subject: z.string().min(2, "Subject is required"),
   classSection: z.string().min(1, "Class/section is required"),
+  chapter: z.string().min(2, "Chapter is required"),
+  title: z.string().min(3, "Title must be at least 3 characters"),
   dueDate: z
     .string()
     .min(1, "Due date is required")
     .refine((value) => isValidIsoDate(value), "Enter a valid date")
     .refine((value) => !isPastDate(value), "Due date cannot be in the past"),
   timeAllowed: z.string().min(1, "Time allowed is required"),
+  difficulty: z.enum(["easy", "medium", "hard"]),
   sourceFile: z.unknown().optional(),
   questionTypes: z.array(questionTypeSchema).min(1, "Add one question type"),
   instructions: z.string().max(600).optional()

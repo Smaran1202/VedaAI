@@ -28,6 +28,7 @@ export async function enqueueAssignmentGeneration(assignmentId: string) {
   }
 
   try {
+    console.info("[assignment:queue:add]", { assignmentId });
     await generationQueue.add("generate-assignment", { assignmentId });
     return true;
   } catch {

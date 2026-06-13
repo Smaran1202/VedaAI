@@ -12,10 +12,12 @@ export function normalizeGeneratedPaper(paper: GeneratedPaper): GeneratedPaper {
   let normalizedQuestionNumber = 1;
 
   const sections = paper.sections
-    .map((section) => {
+    .map((section, sectionIndex) => {
+      const sectionId = section.id || createStableId("section", `${section.title}-${sectionIndex}`);
       const questions = section.questions.flatMap((question) => {
         const normalizedText = normalizeQuestionText(question.question);
         const originalAnswer = originalAnswers.get(originalQuestionNumber);
+        const questionNumber = originalQuestionNumber;
         originalQuestionNumber += 1;
 
         if (!normalizedText || seenQuestions.has(normalizedText)) {
@@ -32,15 +34,21 @@ export function normalizeGeneratedPaper(paper: GeneratedPaper): GeneratedPaper {
         return [
           {
             ...question,
+            id: question.id || createStableId("question", `${sectionId}-${questionNumber}-${question.question}`),
+            sectionId,
+            type: question.type || section.questionType,
             question: question.question.trim(),
             difficulty: normalizeDifficulty(question.difficulty, normalizedQuestionNumber),
-            options: question.options?.map((option) => option.trim()).filter(Boolean)
+            options: question.options?.map((option) => option.trim()).filter(Boolean),
+            answer: question.answer?.trim() || originalAnswer?.trim() || "Answer should match the accepted textbook explanation.",
+            sourceChunkId: question.sourceChunkId
           }
         ];
       });
 
       return {
         ...section,
+        id: sectionId,
         questions
       };
     })
@@ -51,6 +59,16 @@ export function normalizeGeneratedPaper(paper: GeneratedPaper): GeneratedPaper {
     sections,
     answerKey
   };
+}
+
+function createStableId(prefix: string, value: string) {
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+
+  return `${prefix}_${hash.toString(36)}`;
 }
 
 function normalizeQuestionText(question: string) {

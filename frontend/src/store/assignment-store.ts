@@ -17,6 +17,7 @@ interface AssignmentState {
   createAssignment: (payload: assignmentService.CreateAssignmentPayload) => Promise<string>;
   deleteAssignment: (id: string) => Promise<void>;
   regenerateAssignment: (id: string) => Promise<void>;
+  setSelectedAssignment: (assignment: Assignment) => void;
   subscribeToGenerationEvents: () => () => void;
 }
 
@@ -93,6 +94,13 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
       set({ error: getErrorMessage(error), isFetching: false });
     }
   },
+  setSelectedAssignment: (assignment) =>
+    set((state) => ({
+      selectedAssignment: assignment,
+      assignments: state.assignments.map((item) =>
+        item.id === assignment.id || item._id === assignment._id ? assignment : item
+      )
+    })),
   regenerateAssignment: async (id) => {
     set({ isFetching: true, error: null });
 

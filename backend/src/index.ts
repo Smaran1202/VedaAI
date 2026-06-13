@@ -9,6 +9,8 @@ import { errorHandler } from "./middleware/errorHandler";
 import { notFound } from "./middleware/notFound";
 import { apiRateLimiter } from "./middleware/rateLimiter";
 import { assignmentRouter } from "./routes/assignment.routes";
+import { userRouter } from "./routes/user.routes";
+import { workspaceProfileRouter } from "./routes/workspaceProfile.routes";
 import { initializeSocket } from "./socket";
 
 const app = express();
@@ -42,7 +44,10 @@ app.get("/health", (_request, response) => {
   });
 });
 
+app.use("/api/users", userRouter);
+app.use("/api/workspace", workspaceProfileRouter);
 app.use("/api/assignments", assignmentRouter);
+app.use("/assignments", assignmentRouter);
 
 initializeSocket(io);
 
